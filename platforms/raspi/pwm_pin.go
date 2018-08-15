@@ -9,19 +9,19 @@ import (
 	"gobot.io/x/gobot/sysfs"
 )
 
-const piBlasterPeriod = 10000000
-
 // PWMPin is the Raspberry Pi implementation of the PWMPinner interface.
 // It uses Pi Blaster.
 type PWMPin struct {
-	pin string
-	dc  uint32
+	pin    string
+	dc     uint32
+	period *uint32
 }
 
 // NewPwmPin returns a new PWMPin
-func NewPWMPin(pin string) *PWMPin {
+func NewPWMPin(pin string, period *uint32) *PWMPin {
 	return &PWMPin{
-		pin: pin}
+		pin:    pin,
+		period: period}
 }
 
 // Export exports the pin for use by the Raspberry Pi
@@ -51,7 +51,7 @@ func (p *PWMPin) InvertPolarity(invert bool) (err error) {
 
 // Period returns the current PWM period for pin
 func (p *PWMPin) Period() (period uint32, err error) {
-	return piBlasterPeriod, nil
+	return *p.period, nil
 }
 
 // SetPeriod does not do anything when using PiBlaster
@@ -66,12 +66,12 @@ func (p *PWMPin) DutyCycle() (duty uint32, err error) {
 
 // SetDutyCycle writes the duty cycle to the pin
 func (p *PWMPin) SetDutyCycle(duty uint32) (err error) {
-	if duty > piBlasterPeriod {
+	if duty > *p.period {
 		return errors.New("Duty cycle exceeds period.")
 	}
 	p.dc = duty
 
-	val := gobot.FromScale(float64(p.dc), 0, piBlasterPeriod)
+	val := gobot.FromScale(float64(p.dc), 0, float64(*p.period))
 
 	// never go below minimum allowed duty for pi blaster
 	if val < 0.05 {

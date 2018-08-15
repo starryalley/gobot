@@ -128,6 +128,17 @@ func TestAdaptorDigitalPWM(t *testing.T) {
 
 	gobottest.Assert(t, a.PwmWrite("notexist", 1), errors.New("Not a valid pin"))
 	gobottest.Assert(t, a.ServoWrite("notexist", 1), errors.New("Not a valid pin"))
+
+	// change PiBlasterPeriod
+	a.PiBlasterPeriod = 20000000
+	pin, _ := a.PWMPin("12")
+	gobottest.Assert(t, pin.SetDutyCycle(1.5*1000*1000), nil)
+	gobottest.Assert(t, strings.Split(fs.Files["/dev/pi-blaster"].Contents, "\n")[0], "18=0.075")
+
+	// change PiBlasterPeriod, the pin should reflect the change
+	a.PiBlasterPeriod = 5000000
+	gobottest.Assert(t, pin.SetDutyCycle(1.5*1000*1000), nil)
+	gobottest.Assert(t, strings.Split(fs.Files["/dev/pi-blaster"].Contents, "\n")[0], "18=0.3")
 }
 
 func TestAdaptorDigitalIO(t *testing.T) {
@@ -230,6 +241,8 @@ func TestAdaptorDigitalPinConcurrency(t *testing.T) {
 
 func TestAdaptorPWMPin(t *testing.T) {
 	a := initTestAdaptor()
+
+	gobottest.Assert(t, a.PiBlasterPeriod, uint32(10000000))
 
 	gobottest.Assert(t, len(a.pwmPins), 0)
 

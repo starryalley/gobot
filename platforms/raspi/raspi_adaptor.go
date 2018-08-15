@@ -34,15 +34,17 @@ type Adaptor struct {
 	spiDevices         [2]spi.Connection
 	spiDefaultMode     int
 	spiDefaultMaxSpeed int64
+	PiBlasterPeriod    uint32
 }
 
 // NewAdaptor creates a Raspi Adaptor
 func NewAdaptor() *Adaptor {
 	r := &Adaptor{
-		mutex:       &sync.Mutex{},
-		name:        gobot.DefaultName("RaspberryPi"),
-		digitalPins: make(map[int]*sysfs.DigitalPin),
-		pwmPins:     make(map[int]*PWMPin),
+		mutex:           &sync.Mutex{},
+		name:            gobot.DefaultName("RaspberryPi"),
+		digitalPins:     make(map[int]*sysfs.DigitalPin),
+		pwmPins:         make(map[int]*PWMPin),
+		PiBlasterPeriod: 10000000,
 	}
 	content, _ := readFile()
 	for _, v := range strings.Split(string(content), "\n") {
@@ -260,7 +262,7 @@ func (r *Adaptor) PWMPin(pin string) (raspiPWMPin sysfs.PWMPinner, err error) {
 	defer r.mutex.Unlock()
 
 	if r.pwmPins[i] == nil {
-		r.pwmPins[i] = NewPWMPin(strconv.Itoa(i))
+		r.pwmPins[i] = NewPWMPin(strconv.Itoa(i), &r.PiBlasterPeriod)
 	}
 
 	return r.pwmPins[i], nil
@@ -273,7 +275,7 @@ func (r *Adaptor) PwmWrite(pin string, val byte) (err error) {
 		return err
 	}
 
-	duty := uint32(gobot.FromScale(float64(val), 0, 255) * piBlasterPeriod)
+	duty := uint32(gobot.FromScale(float64(val), 0, 255) * float64(r.PiBlasterPeriod))
 	return sysfsPin.SetDutyCycle(duty)
 }
 
@@ -284,7 +286,7 @@ func (r *Adaptor) ServoWrite(pin string, angle byte) (err error) {
 		return err
 	}
 
-	duty := uint32(gobot.FromScale(float64(angle), 0, 180) * piBlasterPeriod)
+	duty := uint32(gobot.FromScale(float64(angle), 0, 180) * float64(r.PiBlasterPeriod))
 	return sysfsPin.SetDutyCycle(duty)
 }
 

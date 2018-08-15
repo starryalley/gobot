@@ -11,7 +11,8 @@ import (
 var _ sysfs.PWMPinner = (*PWMPin)(nil)
 
 func TestPwmPin(t *testing.T) {
-	pin := NewPWMPin("1")
+	newPeriod := uint32(20000000)
+	pin := NewPWMPin("1", &newPeriod)
 	gobottest.Assert(t, pin.Export(), nil)
 	gobottest.Assert(t, pin.Enable(true), nil)
 	val, _ := pin.Polarity()
@@ -21,10 +22,10 @@ func TestPwmPin(t *testing.T) {
 	gobottest.Assert(t, val, "normal")
 
 	period, _ := pin.Period()
-	gobottest.Assert(t, period, uint32(10000000))
+	gobottest.Assert(t, period, uint32(20000000))
 	gobottest.Assert(t, pin.SetPeriod(1000), nil)
 	period, _ = pin.Period()
-	gobottest.Assert(t, period, uint32(10000000))
+	gobottest.Assert(t, period, uint32(20000000))
 
 	dc, _ := pin.DutyCycle()
 	gobottest.Assert(t, dc, uint32(0))
